@@ -25,7 +25,7 @@ import time
 
 # Changelog....
 # 14/10/22 19:02 added save pcg to asm file as well as a bin file.
-
+# 14/10/22 22:30 adding support to select PCG or ROM character for PLACEment or copying to pixel editor
 
 # IF YOU HAVE A SMALL ONE 
 ScreenWidth = 850
@@ -122,8 +122,8 @@ PcgBeingEdited = 0 # The character code 0-255 of the character being edited. If 
 # UI Elements
 ScrnCsr = 0     # The cursor on the bee screen 0-1023
 PcgCsr = 0     # The PCG selection cursor 0-127
-PcgIsSelected = True # Flase if character ROM being displayed in PCG dump area.
 IsGridEnabled = False # Show grid on Bee screen
+ShowingPcg = True # Showing PCG in the character dump
 
 TextTopX = 1048 # This gets updated at startup
 TextTopY = 720
@@ -326,6 +326,12 @@ def btnPixCommit(screen,x,y):
     global BeePcgRam
     global PixEdBuffer
 
+    if not ShowingPcg:
+        drawDialog(screen,"You need to select a PCG destination")
+        time.sleep(2)
+        renderBeeScreen(screen)
+        return
+
     drawPixEd(screen, 0)
     BeePcgRam[PcgCsr * 16:PcgCsr * 16+16] = PixEdBuffer[0:16]
     drawPcgDumpScreen(screen)
@@ -385,9 +391,17 @@ def btnCls(screen,x,y):
     renderBeeScreen(screen)
 
 def btnSelectPCG(screen,x,y):
+    global ShowingPcg
+    
+    ShowingPcg = True
+    drawPcgDumpScreen(screen)
     print("Show PCG in character set dump")
 
 def btnSelectROM(screen,x,y):
+    global ShowingPcg
+
+    ShowingPcg = False
+    drawPcgDumpScreen(screen)
     print("Show ROM characters in dump")
 
 def btnEdSelPcg(screen, x,y):
@@ -397,7 +411,10 @@ def btnEdSelPcg(screen, x,y):
 
     pcgadr = PcgCsr * 16 # each character takes 16 bytes
     PcgBeingEdited = PcgCsr
-    PixEdBuffer = BeePcgRam[pcgadr:pcgadr+16]
+    if ShowingPcg:
+        PixEdBuffer = BeePcgRam[pcgadr:pcgadr+16]
+    else:
+        PixEdBuffer = BeeCharRom[pcgadr:pcgadr+16]
     drawPixEd(screen)
 
 # Place currently selected PCG or character ROM character on screen at cursor and advance cursor
@@ -406,7 +423,7 @@ def btnPlaceChar(screen,x,y):
     global ScrnCsr
     global PcgCsr
 
-    if PcgIsSelected: # working with PCG character at pcgcsr address
+    if ShowingPcg: # working with PCG character at pcgcsr address
         BeeVidRam[ScrnCsr] = PcgCsr + 128
     else:
         BeeVidRam[ScrnCsr] = PcgCsr
@@ -586,14 +603,19 @@ def drawPcgDumpScreen(screen):
     x = PcgDumpTopX
     y = PcgDumpTopY
     for char in range(0,64):
-        render8x16(screen, BeePcgRam[(char * 16):(char * 16)+16], x, y)
+        if ShowingPcg:
+            render8x16(screen, BeePcgRam[(char * 16):(char * 16)+16], x, y)
+        else:
+            render8x16(screen, BeeCharRom[(char * 16):(char * 16)+16], x, y,fg=pygame.Color(48,48,48))
         x = x + 8 * BeeScrnWMul
 
     x = PcgDumpTopX
     y = y + (16*BeeScrnHMul) + 1 # the plus 1 gives us a 1 pixel divider between the two rows
     for char in range(64,128):
-        #print(char,x,y)
-        render8x16(screen, BeePcgRam[(char * 16):(char * 16)+16], x, y)
+        if ShowingPcg:
+            render8x16(screen, BeePcgRam[(char * 16):(char * 16)+16], x, y)
+        else:
+            render8x16(screen, BeeCharRom[(char * 16):(char * 16)+16], x, y,fg=pygame.Color(48,48,48))
         x = x + 8 * BeeScrnWMul
 
 # Set a pixel on the bee screen 
