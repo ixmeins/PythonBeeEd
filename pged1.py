@@ -138,8 +138,8 @@ ButtonColour = pygame.Color("dark gray")
 MyButton = dict()
 Buttons = []
 
-DialogTopX = (BeeScrnTopX + BeeScrnWidth * BeeScrnWMul + BeeScrnBorderWid) /2 #534 # The middle of the "Bee" screen area
-DialogTopY = (BeeScrnTopY + BeeScrnHeight * BeeScrnHMul + BeeScrnBorderWid) /2 # 377
+DialogTopX = (BeeScrnTopX + (BeeScrnWidth/2 * BeeScrnWMul) + BeeScrnBorderWid) /2 #534 # The middle of the "Bee" screen area
+DialogTopY = (BeeScrnTopY + (BeeScrnHeight/2 * BeeScrnHMul) + BeeScrnBorderWid) /2 # 377
 DialogTextColour = pygame.Color("yellow")
 DialogBorderColour = pygame.Color("red")
 DialogBgColour = pygame.Color(32,32,32)
