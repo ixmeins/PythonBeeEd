@@ -1,8 +1,26 @@
-#from operator import truediv
 from sys import argv
 import pygame
 import random
 import time
+
+# Written by Ingmar Meins whilst sick at home with Covid19 in October 2022.
+
+# This is a PCG and screen editor for the Microbee series of computers.
+# The character_4k.rom file is copyright Microbee Systems - it can be freely obtained from
+# various sources on the web and by copying the ROM on your own Microbee.
+
+# It is unlikely many Americans will use this software so lets not waste any time with
+# the sort of disclaimers that most of the intelligent world find obvious. Eg If you burn your toast and the
+# fire brigade turns up and charges you $2000 for a callout because you were too busy editing PCG 
+# characters then stiff shit.
+
+# The filename entry stuff "TextEntry" is grotty and simple. All filenames are presumed to begin with:
+# PCG- eg if you enter a filename of 12345 you get PCG-12345.bin or .asm if I have written that code yet.
+# VID-
+# COL-
+
+# Todo: Allow the user to change between selecting a PCG or a ROM character to place on the screen or copy
+# to the pixel editor window.
 
 ScreenWidth = 1400
 ScreenHeight = 900
