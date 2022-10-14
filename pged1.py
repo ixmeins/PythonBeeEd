@@ -22,21 +22,38 @@ import time
 # Todo: Allow the user to change between selecting a PCG or a ROM character to place on the screen or copy
 # to the pixel editor window.
 
-ScreenWidth = 1400
-ScreenHeight = 900
+# IF YOU HAVE A SMALL ONE 
+ScreenWidth = 850
+ScreenHeight = 600
+BeeScrnHMul = 2 # y scaling factor ie 256 becomes 768
+BeeScrnWMul = 1 # x scaling factor ie 512 becomes 1024 
+ButtonHeight = 30
+ButtonSpacing = 4
+
+# IF YOU HAVE A BIG ONE
+#ScreenWidth = 1400
+#ScreenHeight = 900
+#BeeScrnHMul = 3 # y scaling factor ie 256 becomes 768
+#BeeScrnWMul = 2 # x scaling factor ie 512 becomes 1024 
+#ButtonHeight = 32
+#ButtonSpacing = 8
 
 DoingTextEntry = False
 TextEntry = "default"
+RenderedCharX = 0 # used to display a sample of the BG/FG
+RenderedCharY = 0
 
 BeeScrnTopX = 10 # x of top left corner of screen rendition in pygame window
 BeeScrnTopY = 10 # y of top left corner of screen rendition in pygame window
 BeeScrnWidth = 512
-BeeScrnWMul = 2 # x scaling factor ie 512 becomes 1024 
 BeeScrnHeight = 256
-BeeScrnHMul = 3 # y scaling factor ie 256 becomes 768
+
 
 BeeScrnBorderCol = pygame.Color(64,64,64)
 BeeScrnBorderWid = 2
+
+NextToBeeScrnX = (BeeScrnTopX + BeeScrnWidth * BeeScrnWMul + BeeScrnBorderWid * 3) # next space available
+print(NextToBeeScrnX)
 
 # Setup the Microbee 16 colour palette. Pygame Color is B G R
 # Colour 6 in the pallete needs to be a Brown ie modified RGBI not a dark yellow.
@@ -103,10 +120,17 @@ PcgCsr = 0     # The PCG selection cursor 0-127
 PcgIsSelected = True # Flase if character ROM being displayed in PCG dump area.
 IsGridEnabled = False # Show grid on Bee screen
 
-ButtonWidth = 80
-ButtonHeight = 32
+TextTopX = 1048 # This gets updated at startup
+TextTopY = 720
+TextWidth = 300
+TextHeight = 60
+TextMaxChar = 16
+TextCharCount = 0
+
+ButtonWidth = 70
+
 ButtonFontSize = 16
-ButtonSpacing = 4
+
 ButtonTextColour = pygame.Color("black")
 ButtonDiabledColour = pygame.Color("gray")
 ButtonColour = pygame.Color("dark gray")
@@ -114,8 +138,8 @@ ButtonColour = pygame.Color("dark gray")
 MyButton = dict()
 Buttons = []
 
-DialogTopX = 534
-DialogTopY = 377
+DialogTopX = (BeeScrnTopX + BeeScrnWidth * BeeScrnWMul + BeeScrnBorderWid) /2 #534 # The middle of the "Bee" screen area
+DialogTopY = (BeeScrnTopY + BeeScrnHeight * BeeScrnHMul + BeeScrnBorderWid) /2 # 377
 DialogTextColour = pygame.Color("yellow")
 DialogBorderColour = pygame.Color("red")
 DialogBgColour = pygame.Color(32,32,32)
@@ -395,7 +419,7 @@ def btnForeground(screen, x,y):
 
     BeeScrFGP = (BeeScrFGP + 1) & 15
     BeeScrnFGCol = BeePalette[BeeScrFGP]
-    render8x16(screen, BeeCharRom[72*16:72*16+16], 1224, 450,BeeScrnFGCol, BeeScrnBGCol)
+    render8x16(screen, BeeCharRom[72*16:72*16+16], RenderedCharX, RenderedCharY-3,BeeScrnFGCol, BeeScrnBGCol,2,2)
 
 def btnBackground(screen,x,y):
     global BeeScrnBGCol
@@ -406,7 +430,7 @@ def btnBackground(screen,x,y):
 
     BeeScrBGP = (BeeScrBGP + 1) & 15
     BeeScrnBGCol = BeePalette[BeeScrBGP]
-    render8x16(screen, BeeCharRom[72*16:72*16+16], 1224, 450,BeeScrnFGCol, BeeScrnBGCol)
+    render8x16(screen, BeeCharRom[72*16:72*16+16], RenderedCharX, RenderedCharY-3,BeeScrnFGCol, BeeScrnBGCol,2,2)
 
 def AddButton(screen,x,y,label,function,w=ButtonWidth,h=ButtonHeight,enabled=True, fg=ButtonColour, bt=ButtonTextColour):
     global Buttons
@@ -531,7 +555,7 @@ def drawBee6416screen(screen):
     BeeScrnWidth*BeeScrnWMul, BeeScrnHeight*BeeScrnHMul))
 
 # draw the pixels for a single 8x16 character from bytearray
-def render8x16(screen, bytes, x, y, fg=PcgDumpFGCol, bg=PcgDumpBGCol):
+def render8x16(screen, bytes, x, y, fg=PcgDumpFGCol, bg=PcgDumpBGCol,hm=BeeScrnHMul, wm=BeeScrnWMul):
     global BeeScrnHMul
     global BeeScrnWMul
 
@@ -542,9 +566,9 @@ def render8x16(screen, bytes, x, y, fg=PcgDumpFGCol, bg=PcgDumpBGCol):
         for sx in range(0,8):
             # print("%02x"%(mask << (7-sx)))
             if b & (mask<<(7-sx)):
-                pygame.draw.rect(screen, fg,(x+(sx * BeeScrnWMul), y+(yi * BeeScrnHMul), BeeScrnWMul, BeeScrnHMul))
+                pygame.draw.rect(screen, fg,(x+(sx * wm), y+(yi * hm), wm, hm))
             else:
-                pygame.draw.rect(screen, bg,(x+(sx * BeeScrnWMul), y+(yi * BeeScrnHMul), BeeScrnWMul, BeeScrnHMul))
+                pygame.draw.rect(screen, bg,(x+(sx * wm), y+(yi * hm), wm, hm))
         yi=yi+1
 
 # The pcg dump screen is the area under the main bee screen showing all 128 PCG characters (1 PCG bank)
@@ -732,13 +756,6 @@ def processPcgAreaClick(screen, x, y, address):
     drawPcgDumpScreen(screen)
     drawPcgCursor(screen)
 
-TextTopX = 1048
-TextTopY = 720
-TextWidth = 300
-TextHeight = 60
-TextMaxChar = 16
-TextCharCount = 0
-
 def drawTextBox(screen):
     global ScreenWidth
     global BeeScrnBorderWid
@@ -748,8 +765,7 @@ def drawTextBox(screen):
     font = pygame.font.SysFont("arial",size=24)
     text = font.render("Filename:"+TextEntry, True, pygame.Color(255,255,255), pygame.Color(64,64,64))
     textRect = text.get_rect()
-    print(textRect.height)
-    pygame.draw.rect(screen, pygame.Color(64,64,64),(TextTopX, TextTopY, ScreenWidth-TextTopX-16, textRect.height)) # Solid
+    pygame.draw.rect(screen, pygame.Color(64,64,64),(TextTopX, TextTopY, 300, textRect.height)) # Solid
     textRect.center = (TextTopX + textRect.width/2,TextTopY +textRect.height/2)
     screen.blit(text, textRect)
 
@@ -821,6 +837,10 @@ def main():
     global ButtonWidth
     global ButtonSpacing
     global DoingTextEntry
+    global RenderedCharX
+    global RenderedCharY
+    global TextTopX
+    global TextTopY
 
     pygame.init()
     pygame.display.set_caption("Microbee Graphics Dev Ed")
@@ -851,30 +871,13 @@ def main():
     renderBeeScreen(screen)
     pygame.display.update()
 
-    bx = 1048
-    by = 784
+    bx = NextToBeeScrnX # 1048
+    #by = 784
     bw = ButtonWidth
     bh = ButtonHeight
     bg = ButtonSpacing
     bnx = bw+bg
     bny = bh+bg
-
-    AddButton(screen, bx,by, "Load Vram", btnLoadVram)
-    AddButton(screen, bx+bnx, by, "Save Vram", btnSaveVram)    
-    AddButton(screen, bx+bnx+bnx, by, "Load Pcg", btnLoadPcg)
-    AddButton(screen, bx+bnx+bnx+bnx, by, "Save Pcg", btnSavePcg)
-
-    by = by + bny
-    AddButton(screen, bx,by, "Load Col", btnLoadCol)
-    AddButton(screen, bx+bnx, by, "Save Col", btnSaveCol)    
-    AddButton(screen, bx+bnx+bnx,by, "Sel PCG", btnSelectPCG)
-    AddButton(screen, bx+bnx+bnx+bnx, by, "Sel ROM", btnSelectROM)    
-
-    by = by + bny
-    AddButton(screen, bx,by, "CLS", btnCls)
-    AddButton(screen, bx+bnx, by, "Place", btnPlaceChar)    
-    AddButton(screen, bx+bnx+bnx,by, "Grid Tg", btnGridToggle)
-    #AddButton(screen, bx+bnx+bnx+bnx, by, "Sel ROM", btnSelectROM)    
 
     by = 326
     AddButton(screen, bx,by, "Up", btnPixUp)
@@ -893,11 +896,36 @@ def main():
     AddButton(screen, bx+bnx, by, "Revert", btnPixRevert)    
     AddButton(screen, bx+bnx+bnx,by, "Edit PCG", btnEdSelPcg)
 
-    by = 460
+    # by = 460
+    by = by + bny
     AddButton(screen, bx,by, "FG", btnForeground, fg=BeeScrnFGCol)
     AddButton(screen, bx+bnx, by, "BG", btnBackground, fg=BeeScrnBGCol, bt=pygame.Color(128,128,128))
+    RenderedCharX = bx+bnx+bnx
+    RenderedCharY = by
+    render8x16(screen, BeeCharRom[72*16:72*16+16], RenderedCharX,RenderedCharY-3,BeeScrnFGCol, BeeScrnBGCol, 2,2) # 1224,450
 
-    render8x16(screen, BeeCharRom[72*16:72*16+16], 1224, 450,BeeScrnFGCol, BeeScrnBGCol)
+    by = by + bny
+    AddButton(screen, bx,by, "Load Vram", btnLoadVram)
+    AddButton(screen, bx+bnx, by, "Save Vram", btnSaveVram)    
+    AddButton(screen, bx+bnx+bnx, by, "Load Pcg", btnLoadPcg)
+    AddButton(screen, bx+bnx+bnx+bnx, by, "Save Pcg", btnSavePcg)
+
+    by = by + bny
+    AddButton(screen, bx,by, "Load Col", btnLoadCol)
+    AddButton(screen, bx+bnx, by, "Save Col", btnSaveCol)    
+    AddButton(screen, bx+bnx+bnx,by, "Sel PCG", btnSelectPCG)
+    AddButton(screen, bx+bnx+bnx+bnx, by, "Sel ROM", btnSelectROM)    
+
+    by = by + bny
+    AddButton(screen, bx,by, "CLS", btnCls)
+    AddButton(screen, bx+bnx, by, "Place", btnPlaceChar)    
+    AddButton(screen, bx+bnx+bnx,by, "Grid Tg", btnGridToggle)
+    #AddButton(screen, bx+bnx+bnx+bnx, by, "Sel ROM", btnSelectROM)    
+    
+    TextTopX = bx # Where the filename entry text appears under the buttons
+    TextTopY = by + bny
+    drawTextBox(screen)
+
     # render8x16(screen,BeeCharRom[0:16],PcgDumpTopX,PcgDumpTopY)
 
     #setBeePixel(screen, 0,0)
@@ -946,7 +974,6 @@ def main():
                     processPixelEditorClick(screen, x, y, address)
 
                 if ClickedArea == 4: # filename field
-                    print("Dialog")
                     drawDialog(screen, "Enter a file name and press enter")
                     DoingTextEntry = True
 
