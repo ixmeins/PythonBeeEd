@@ -1,4 +1,5 @@
 from sys import argv
+from tkinter import E
 import pygame
 import random
 import time
@@ -21,6 +22,10 @@ import time
 
 # Todo: Allow the user to change between selecting a PCG or a ROM character to place on the screen or copy
 # to the pixel editor window.
+
+# Changelog....
+# 14/10/22 19:02 added save pcg to asm file as well as a bin file.
+
 
 # IF YOU HAVE A SMALL ONE 
 ScreenWidth = 850
@@ -190,6 +195,7 @@ def btnSavePcg(screen,x,y):
     file.write(BeePcgRam[0:2048])
     file.close()
 
+    savePCGasm(TextEntry)
     print("Save PCG:", filename)
 
 def btnLoadPcg(screen,x,y):
@@ -823,6 +829,29 @@ def drawDialog(screen, message):
     pygame.draw.rect(screen, DialogBorderColour,(textRect.x-5, textRect.y-5, textRect.width+10, textRect.height+10),1,4)
     screen.blit(text, textRect)
     pygame.display.update()
+
+# Save the contents of the PCG memory as bytes in Z80 asm format.
+def savePCGasm(filename):
+    try:
+        file = open("PCG-"+filename+".asm", "w")
+
+        for theChar in range(0,128): # The character loop.
+            file.write("PCG"+str(theChar))
+
+            for line in range(0,2):
+                if line == 0:
+                    file.write("\t.byte ")
+                else:
+                    file.write("\t\t.byte ")
+
+                for b in range(0,8):
+                    file.write(str(BeePcgRam[(theChar*16)+(line*8)+b]))
+                    if b<7:
+                        file.write(",")
+                file.write("\n")
+        file.close()
+    except:
+        print("Epic fail...")
 
 def main():
 
