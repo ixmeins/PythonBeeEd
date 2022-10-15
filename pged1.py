@@ -26,6 +26,8 @@ import time
 # Changelog....
 # 14/10/22 19:02 added save pcg to asm file as well as a bin file.
 # 14/10/22 22:30 adding support to select PCG or ROM character for PLACEment or copying to pixel editor
+# 15/10/22 20:00 looking at the adjecant cell display in the pixel editor. ie show a column of the
+# PCG on either side of the what you have selected.
 
 # IF YOU HAVE A SMALL ONE 
 ScreenWidth = 850
@@ -101,6 +103,9 @@ PcgDumpTopX = BeeScrnTopX
 PcgDumpTopY = BeeScrnTopY + BeeScrnBorderWid + (BeeScrnHeight * BeeScrnHMul) + 4
 PcgDumpHeight = 32 * BeeScrnHMul
 PcgDumpWidth = 8 * 64 * BeeScrnWMul
+
+PixelLeftChar = 66+128
+PixelRightChar = 32
 
 # Parameters that define the character editor/display area to the right of the screen
 # This will be an 8x16 pixel area but we will add a pixel on each side to show the 
@@ -533,6 +538,8 @@ def doPixEdBorder(screen):
 # Normal pixel rendered as 24x24 at a 25 pixel spacing.
 # |************************|*****
 # Borders are 25x25 rectangle of width 1 at 25 pixel spacing.
+
+
 def drawPixEd(screen, pixelSource = 0, fg = PixEdFGCol, bg = PixEdBGCol):
     #pygame.draw.rect(screen, BeeScrnBorderCol, 
     #(PixEdTopX-BeeScrnBorderWid, PixEdTopY-BeeScrnBorderWid, 
@@ -547,6 +554,44 @@ def drawPixEd(screen, pixelSource = 0, fg = PixEdFGCol, bg = PixEdBGCol):
     # This editor can be displaying a couple of possible data sources.
     # pixelSource = 0 if it is from the PCG RAM by being selected in the PCG dump
     # pixelSource = 1 if is is from a screen selection. In which case show a pixel from bounding stuff too
+
+    # draw the 1 pixel border on the left edge from the character code in PixelLeftChr
+    # PixelLeftChar can be 0-255 so point to a ROM or PCG character.
+
+    leftCharBuffer = bytearray(16)
+    rightCharBuffer = bytearray(16)
+
+    if PixelLeftChar > 127: # pcg character
+        leftCharBuffer[0:16] = BeePcgRam[(PixelLeftChar-128)*16:(PixelLeftChar-128)*16+16]
+    else:
+        leftCharBuffer[0:16] = BeeCharRom[(PixelLeftChar)*16:(PixelLeftChar)*16+16]
+
+    if PixelRightChar > 127: # pcg character
+        rightCharBuffer[0:16] = BeePcgRam[(PixelRightChar-128)*16:(PixelRightChar-128)*16+16]
+    else:
+        rightCharBuffer[0:16] = BeeCharRom[(PixelRightChar)*16:(PixelRightChar)*16+16]
+
+    # Now draw the 16 bit 0 pixels from leftCharBuffer[]
+    for y in range(0,16):
+        bit = leftCharBuffer[y] & 1
+        #print(y,bit)
+        tx = PixEdTopX+1
+        ty = PixEdTopY+1+PixEdPh+1
+        if bit == 1:
+            pygame.draw.rect(screen, pygame.Color(32,32,32),(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
+        else:
+            pygame.draw.rect(screen, bg,(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
+
+    # Now draw the 16 bit 0 pixels from rightCharBuffer[]
+    for y in range(0,16):
+        bit = rightCharBuffer[y] & 128
+        #print(y,bit)
+        tx = PixEdTopX+(9*(PixEdPw+1))+1
+        ty = PixEdTopY+1+PixEdPh+1
+        if bit == 128:
+            pygame.draw.rect(screen, pygame.Color(32,32,32),(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
+        else:
+            pygame.draw.rect(screen, bg,(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
 
     if pixelSource == 0:
         mask = 1
@@ -892,6 +937,8 @@ def main():
     global RenderedCharY
     global TextTopX
     global TextTopY
+    global PixelLeftChar
+    global PixelRightChar
 
     pygame.init()
     pygame.display.set_caption("Microbee Graphics Dev Ed")
@@ -1032,8 +1079,30 @@ def main():
                 k = event.key
                 if DoingTextEntry == True:
                     performTextEntry(screen, k)
+                else:
+                    print(k)
+                    if k == 108: # l for select left 
+                        x,y = pygame.mouse.get_pos()
+                        if whereIsTheMouse(x,y)[0] == 2: # we are in the pcg area
+                            adr = whereIsTheMouse(x,y)[3]
+                            if ShowingPcg == True:
+                                PixelLeftChar = adr + 128
+                            else:
+                                PixelLeftChar = adr
 
-                
+                            drawPixEd(screen, PixEdBuffer)
+                    
+                    if k == ord('r'): # r for select left 
+                        print("right")
+                        x,y = pygame.mouse.get_pos()
+                        if whereIsTheMouse(x,y)[0] == 2: # we are in the pcg area
+                            adr = whereIsTheMouse(x,y)[3]
+                            if ShowingPcg == True:
+                                PixelRightChar = adr + 128
+                            else:
+                                PixelRightChar = adr
+
+                            drawPixEd(screen, PixEdBuffer)                
 
         pygame.display.update()
 
