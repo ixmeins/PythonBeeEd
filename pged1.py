@@ -578,7 +578,7 @@ def drawPixEd(screen, pixelSource = 0, fg = PixEdFGCol, bg = PixEdBGCol):
         tx = PixEdTopX+1
         ty = PixEdTopY+1+PixEdPh+1
         if bit == 1:
-            pygame.draw.rect(screen, pygame.Color(32,32,32),(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
+            pygame.draw.rect(screen, pygame.Color(0,48,16),(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
         else:
             pygame.draw.rect(screen, bg,(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
 
@@ -589,7 +589,7 @@ def drawPixEd(screen, pixelSource = 0, fg = PixEdFGCol, bg = PixEdBGCol):
         tx = PixEdTopX+(9*(PixEdPw+1))+1
         ty = PixEdTopY+1+PixEdPh+1
         if bit == 128:
-            pygame.draw.rect(screen, pygame.Color(32,32,32),(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
+            pygame.draw.rect(screen, pygame.Color(0,48,16),(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
         else:
             pygame.draw.rect(screen, bg,(tx, ty+(y * (PixEdPh+1)), PixEdPw, PixEdPh))
 
